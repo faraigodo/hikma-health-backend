@@ -1,9 +1,12 @@
-from typing import Callable, Literal
-from typing import Generic, TypeVar
+from typing import Callable, Literal, TypeVar, Generic, List, Optional, Union
+
 TCreate = TypeVar('TCreate')
 TUpdate = TypeVar('TUpdate')
 TDelete = TypeVar('TDelete')
 
+TCreatedData = TypeVar('TCreatedData')
+TUpdatedData = TypeVar('TUpdatedData')
+TDeletedData = TypeVar('TDeletedData')
 
 ACTION_CREATE = 'CREATE'
 ACTION_UPDATE = 'UPDATE'
@@ -13,17 +16,17 @@ ActionType = Literal['CREATE', 'UPDATE', 'DELETE']
 
 
 class DeltaData(Generic[TCreate, TUpdate, TDelete]):
-    """Describes the data and how it should be syncronized."""
+    """Describes the data and how it should be synchronized."""
 
     def __init__(
         self,
-        created: list[TCreate] | None = None,
-        updated: list[TUpdate] | None = None,
-        deleted: list[TDelete] | None = None,
+        created: Optional[List[TCreate]] = None,
+        updated: Optional[List[TUpdate]] = None,
+        deleted: Optional[List[TDelete]] = None,
     ):
-        self.created = created if created is not None else []
-        self.updated = updated if updated is not None else []
-        self.deleted = deleted if deleted is not None else []
+        self.created: List[TCreate] = created if created is not None else []
+        self.updated: List[TUpdate] = updated if updated is not None else []
+        self.deleted: List[TDelete] = deleted if deleted is not None else []
 
     def __iter__(self):
         for d in self.created:
@@ -35,38 +38,33 @@ class DeltaData(Generic[TCreate, TUpdate, TDelete]):
         for d in self.deleted:
             yield ACTION_DELETE, d
 
-    def to_dict(self):
+    def to_dict(self) -> dict:
         return dict(created=self.created, updated=self.updated, deleted=self.deleted)
 
     @property
-    def size(self):
+    def size(self) -> int:
         return len(self.created) + len(self.updated) + len(self.deleted)
 
-    def add[TCreatedData, TUpdatedData, TDeletedData](
+    def add(
         self,
-        created: list[TCreatedData] | None = None,
-        updated: list[TUpdatedData] | None = None,
-        deleted: list[TDeletedData] | None = None,
-    ):
-        cr: list[TCreate | TCreatedData] = list(self.created)
-        if created is not None:
-            for c in created:
-                cr.append(c)
+        created: Optional[List[TCreatedData]] = None,
+        updated: Optional[List[TUpdatedData]] = None,
+        deleted: Optional[List[TDeletedData]] = None,
+    ) -> 'DeltaData[Union[TCreate, TCreatedData], Union[TUpdate, TUpdatedData], Union[TDelete, TDeletedData]]':
+        cr: List[Union[TCreate, TCreatedData]] = list(self.created)
+        if created:
+            cr.extend(created)
 
-        ur: list[TUpdate | TUpdatedData] = list(self.updated)
-        if updated is not None:
-            for c in updated:
-                ur.append(c)
+        ur: List[Union[TUpdate, TUpdatedData]] = list(self.updated)
+        if updated:
+            ur.extend(updated)
 
-        dr: list[TDelete | TDeletedData] = list(self.deleted)
-        if deleted is not None:
-            for c in deleted:
-                dr.append(c)
+        dr: List[Union[TDelete, TDeletedData]] = list(self.deleted)
+        if deleted:
+            dr.extend(deleted)
 
-        return DeltaData(created=cr, updated=ur, deleted=dr)
+        return DeltaData(cr, ur, dr)
 
     @property
-    def is_empty(self):
-        return (
-            len(self.created) == 0 and len(self.deleted) == 0 and len(self.updated) == 0
-        )
+    def is_empty(self) -> bool:
+        return not (self.created or self.updated or self.deleted)
