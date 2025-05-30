@@ -1,4 +1,8 @@
 from typing import Callable, Literal
+from typing import Generic, TypeVar
+TCreate = TypeVar('TCreate')
+TUpdate = TypeVar('TUpdate')
+TDelete = TypeVar('TDelete')
 
 
 ACTION_CREATE = 'CREATE'
@@ -8,7 +12,7 @@ ACTION_DELETE = 'DELETE'
 ActionType = Literal['CREATE', 'UPDATE', 'DELETE']
 
 
-class DeltaData[TCreate, TUpdate, TDelete]:
+class DeltaData(Generic[TCreate, TUpdate, TDelete]):
     """Describes the data and how it should be syncronized."""
 
     def __init__(
