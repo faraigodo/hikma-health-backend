@@ -480,20 +480,20 @@ class PatientAttribute(SyncToClient, SyncToServer):
                 updated_at = EXCLUDED.updated_at,
                 last_modified = EXCLUDED.last_modified;""",
             data,
+            )
+    d = cur.fetchone()
+    if d is not None:
+        exists = d[0]
+    if not exists:
+        logging.warning(
+            f'Event {data["id"]} references non-existent visit {data["visit_id"]}. Setting visit_id to None.'
         )
-
-    @classmethod
-    def update_from_delta(cls, ctx, cur: Cursor, data: dict):
-        return cls.create_from_delta(ctx, cur, data)
-
-    @classmethod
-    def delete_from_delta(cls, ctx, cur: Cursor, id: str):
-        cur.execute(
-            """UPDATE patient_additional_attributes SET is_deleted=true, deleted_at=%s WHERE id = %s::uuid;""",
-            (ctx.last_pushed_at, id),
+        print(
+            f'REVIEWER WARNING: Event {data["id"]} references non-existent visit {data["visit_id"]}. visit_id will be set to None.'
         )
+        data['visit_id'] = None
 
-
+    # --------------------------------------
 @core.dataentity
 class Event(SyncToClient, SyncToServer):
     TABLE_NAME = 'events'
