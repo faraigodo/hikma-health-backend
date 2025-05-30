@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Any, override
+from typing import Any
 
 from psycopg import Cursor
 from psycopg.connection import Connection
@@ -18,34 +18,41 @@ import datetime
 from hikmahealth.sync import DeltaData
 
 
-# should be move to a different structure. since it depends on psycopg to
+# should be moved to a different structure since it depends on psycopg to
 # execute properly
 class SyncToClient(ISyncPull[Connection], core.Entity):
     """For entity that expects to apply changes from server to client"""
 
     @classmethod
-    @override
     def get_delta_records(cls, last_sync_time: datetime.datetime, conn: Connection):
-        # print(last_sync_time)
         with conn.cursor(row_factory=dict_row) as cur:
             newrecords = cur.execute(
-                'SELECT * from {} WHERE server_created_at > %s AND deleted_at IS NULL AND is_deleted = false'.format(
-                    cls.TABLE_NAME
-                ),
+                f"""
+                SELECT * FROM {cls.TABLE_NAME}
+                WHERE server_created_at > %s
+                  AND deleted_at IS NULL
+                  AND is_deleted = false
+                """,
                 (last_sync_time,),
             ).fetchall()
 
             updatedrecords = cur.execute(
-                'SELECT * FROM {} WHERE last_modified > %s AND server_created_at < %s AND deleted_at IS NULL AND is_deleted = false'.format(
-                    cls.TABLE_NAME
-                ),
+                f"""
+                SELECT * FROM {cls.TABLE_NAME}
+                WHERE last_modified > %s
+                  AND server_created_at < %s
+                  AND deleted_at IS NULL
+                  AND is_deleted = false
+                """,
                 (last_sync_time, last_sync_time),
             ).fetchall()
 
             deleterecords = cur.execute(
-                'SELECT id FROM {} WHERE deleted_at > %s AND is_deleted = true'.format(
-                    cls.TABLE_NAME
-                ),
+                f"""
+                SELECT id FROM {cls.TABLE_NAME}
+                WHERE deleted_at > %s
+                  AND is_deleted = true
+                """,
                 (last_sync_time,),
             ).fetchall()
 
@@ -98,28 +105,17 @@ class SyncToServer(ISyncPush[Connection]):
 
         with conn.cursor() as cur:
             try:
-                # `cur.executemany` can be used instead
-                # batched updates??
                 for action, data in deltadata:
-                    transformed_data = data
-
                     try:
                         tdata = cls.transform_delta(ctx, action, data)
-                        if tdata is None:
-                            # `transformed_data` may not contain the
-                            # resulting transformation for the data.
-                            # Should use the original data
-                            transformed_data = data
-                        else:
-                            transformed_data = tdata
-
+                        transformed_data = tdata if tdata is not None else data
                     except NotImplementedError:
-                        # if `transformed_data` logic missing,
-                        # proceed with the same untransformed one
                         transformed_data = data
 
                     if action in (sync.ACTION_CREATE, sync.ACTION_UPDATE):
-                        assert isinstance(transformed_data, dict), 'data must be a dict'
+                        assert isinstance(transformed_data, dict), (
+                            f"Data must be a dict for action {action}."
+                        )
 
                         if action == sync.ACTION_CREATE:
                             cls.create_from_delta(ctx, cur, transformed_data)
@@ -128,16 +124,12 @@ class SyncToServer(ISyncPush[Connection]):
 
                     elif action == sync.ACTION_DELETE:
                         assert isinstance(transformed_data, str), (
-                            'expect transformed data to be a {}. instead got {}'.format(
-                                str, type(transformed_data)
-                            )
+                            f"Expected transformed data to be a string, got {type(transformed_data)}"
                         )
-
                         cls.delete_from_delta(ctx, cur, transformed_data)
 
-                # should commit the entire delta, or not
                 conn.commit()
             except Exception as e:
-                print(f'{cls.__name__} sync errors: {str(e)}')
+                print(f"{cls.__name__} sync errors: {str(e)}")
                 conn.rollback()
                 raise SyncPushError(*e.args)
