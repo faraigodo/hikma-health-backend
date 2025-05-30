@@ -5,7 +5,7 @@ ACTION_CREATE = 'CREATE'
 ACTION_UPDATE = 'UPDATE'
 ACTION_DELETE = 'DELETE'
 
-type ActionType = Literal['CREATE'] | Literal['UPDATE'] | Literal['DELETE']
+ActionType = Literal['CREATE', 'UPDATE', 'DELETE']
 
 
 class DeltaData[TCreate, TUpdate, TDelete]:
