@@ -1,20 +1,24 @@
 from abc import abstractmethod
-from typing import Any, Callable
+from typing import Any, Callable, Optional, Dict, TypeVar, Type
 from hikmahealth.server.client import db
 
 from psycopg.rows import dict_row, class_row
 
+TKey = TypeVar('TKey')
+TValue = TypeVar('TValue')
 
-def get_from_dict[TKey, TValue](
-    d: dict[TKey, TValue],
+
+def get_from_dict(
+    d: Dict[TKey, TValue],
     key: TKey,
-    transform: Callable[[TValue], Any] | None = None,
-    defaultValue: Any | None = None,
-):
+    transform: Optional[Callable[[TValue], Any]] = None,
+    defaultValue: Optional[Any] = None,
+) -> Any:
     value = d.get(key, None)
     if value is not None:
         if transform is not None:
             return transform(value)
+        return value
     else:
         return defaultValue
 
@@ -25,42 +29,32 @@ class SimpleCRUD:
     @property
     @abstractmethod
     def TABLE_NAME(self) -> str:
-        """This refers to the name of the able associated with
-        the entity"""
+        """This refers to the name of the table associated with the entity"""
         raise NotImplementedError(
-            f'require {__class__.__name__}.TABLE_NAME to be defined'
+            f"Require {self.__class__.__name__}.TABLE_NAME to be defined"
         )
 
     @classmethod
-    def from_id(cls, id: str):
+    def from_id(cls: Type["SimpleCRUD"], id: str) -> Optional["SimpleCRUD"]:
         with db.get_connection().cursor(row_factory=class_row(cls)) as cur:
             node = cur.execute(
-                """
-                SELECT * FROM {} WHERE is_deleted = FALSE AND id = %s;
-                """.format(cls.TABLE_NAME),
+                f"SELECT * FROM {cls.TABLE_NAME} WHERE is_deleted = FALSE AND id = %s;",
                 [id],
             ).fetchone()
-
         return node
 
     @classmethod
-    def get_all(cls):
+    def get_all(cls: Type["SimpleCRUD"]) -> list["SimpleCRUD"]:
         with db.get_connection().cursor(row_factory=class_row(cls)) as cur:
-            node = cur.execute(
-                """
-                SELECT * FROM {} WHERE is_deleted = FALSE;
-                """.format(cls.TABLE_NAME),
+            nodes = cur.execute(
+                f"SELECT * FROM {cls.TABLE_NAME} WHERE is_deleted = FALSE;"
             ).fetchall()
-
-        return node
+        return nodes
 
     @classmethod
-    def get_many(cls, limit: int):
+    def get_many(cls: Type["SimpleCRUD"], limit: int) -> list["SimpleCRUD"]:
         with db.get_connection().cursor(row_factory=class_row(cls)) as cur:
-            node = cur.execute(
-                """
-                SELECT * FROM {} WHERE is_deleted = FALSE;
-                """.format(cls.TABLE_NAME),
+            nodes = cur.execute(
+                f"SELECT * FROM {cls.TABLE_NAME} WHERE is_deleted = FALSE;"
             ).fetchmany(limit)
-
-        return node
+        return nodes
