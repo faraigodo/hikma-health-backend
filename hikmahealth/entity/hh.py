@@ -579,21 +579,15 @@ class Event(SyncToClient, SyncToServer):
             if d is not None:
                 exists = d[0]
 
-            if not exists:
-                logging.warning(
-                    f'Event {data["id"]} references non-existent visit {
-                        data["visit_id"]
-                    }. Setting visit_id to None.'
-                )
-                print(
-                    f'REVIEWER WARNING: Event {
-                        data["id"]
-                    } references non-existent visit {
-                        data["visit_id"]
-                    }. visit_id will be set to None.'
-                )
+           if not exists:
+    logging.warning(
+        f'Event {data["id"]} references non-existent visit {data["visit_id"]}. Setting visit_id to None.'
+    )
+    print(
+        f'REVIEWER WARNING: Event {data["id"]} references non-existent visit {data["visit_id"]}. visit_id will be set to None.'
+    )
+    data['visit_id'] = None
 
-                data['visit_id'] = None
 
         # --------------------------------------
 
