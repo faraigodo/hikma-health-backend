@@ -1,7 +1,5 @@
 import psycopg
-from psycopg.errors import DuplicateTable
 
-# Replace these with your actual DB connection details or use environment variables
 DB_CONN_INFO = "postgresql://fst_hikma_db_user:wuuM5UuL4vDKjQye1ALsuzMavvuMNdcG@dpg-d0s9nlvdiees73a6he.postgres.render.com:5432/fst_hikma_db"
 
 CREATE_TOKENS_TABLE_SQL = """
