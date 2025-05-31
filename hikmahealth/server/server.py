@@ -1,6 +1,9 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
 import logging
+import os
+
+print("DEBUG: DATABASE_URL =", os.getenv("DATABASE_URL")) 
 
 from hikmahealth.server import (
     custom_routes_admin,
