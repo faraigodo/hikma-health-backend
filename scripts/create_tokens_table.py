@@ -1,7 +1,7 @@
 import psycopg
 
 # Replace this with your Internal Database URL exactly as shown in Render dashboard
-DATABASE_URL = "postgresql://fst_hikma_db_user:wuuM5UuL4vDKjQye1ALsuzMavvuMNdcG@dpg-d0s9nlvdiees73a6he.postgres.render.com:5432/fst_hikma_db"
+DATABASE_URL = "postgresql://fst_hikma_db_user:wuuM5UuL4vDKjQye1ALsuzMavvuMNdcG@dpg-d0s9nlvdiees73a6hegg-a/fst_hikma_db"
 
 CREATE_TABLE_SQL = """
 CREATE TABLE IF NOT EXISTS tokens (
