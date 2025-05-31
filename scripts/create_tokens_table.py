@@ -1,8 +1,9 @@
 import psycopg
 
-DB_CONN_INFO = "postgresql://fst_hikma_db_user:wuuM5UuL4vDKjQye1ALsuzMavvuMNdcG@dpg-d0s9nlvdiees73a6he.postgres.render.com:5432/fst_hikma_db"
+# Replace this with your Internal Database URL exactly as shown in Render dashboard
+DATABASE_URL = "postgresql://fst_hikma_db_user:wuuM5UuL4vDKjQye1ALsuzMavvuMNdcG@dpg-d0s9nlvdiees73a6he.postgres.render.com:5432/fst_hikma_db"
 
-CREATE_TOKENS_TABLE_SQL = """
+CREATE_TABLE_SQL = """
 CREATE TABLE IF NOT EXISTS tokens (
     token VARCHAR(255) PRIMARY KEY,
     user_id INTEGER NOT NULL,
@@ -12,14 +13,14 @@ CREATE TABLE IF NOT EXISTS tokens (
 );
 """
 
-def ensure_tokens_table_exists():
+def create_tokens_table():
     try:
-        with psycopg.connect(DB_CONN_INFO) as conn:
+        with psycopg.connect(DATABASE_URL) as conn:
             with conn.cursor() as cur:
-                cur.execute(CREATE_TOKENS_TABLE_SQL)
-                print("Checked and ensured 'tokens' table exists.")
+                cur.execute(CREATE_TABLE_SQL)
+                print("Tokens table created or already exists.")
     except Exception as e:
-        print(f"Error ensuring tokens table: {e}")
+        print(f"Error creating tokens table: {e}")
 
 if __name__ == "__main__":
-    ensure_tokens_table_exists()
+    create_tokens_table()
