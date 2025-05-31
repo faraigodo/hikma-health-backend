@@ -27,6 +27,6 @@ def create_admin_user(name, email, password, role='admin'):
 if __name__ == "__main__":
     admin_name = "admin"
     admin_email = "godot@fst.co.zw"
-    admin_password = "admin123"
+    admin_password = "admin1234"
 
     create_admin_user(admin_name, admin_email, admin_password)
